@@ -14,7 +14,7 @@ var board = [
     [0, 0, 0, 0,  0, 0, 0, 0],
     [0, 0, 0, 0,  0, 0, 0, 0]
 ]
-var turnBlack = true
+var turn = BLACK
 
 //関数を定義する場所
 func update() {
@@ -22,7 +22,7 @@ func update() {
     var numWhite = 0
 
     for ix in 0 ..< 8 {
-        print(String(format: "%02d ", ix * 10), terminator: "")
+        print(String(format: "%02d ", ix), terminator: "")
     }
     print()
 
@@ -39,7 +39,7 @@ func update() {
                 print(" . ", terminator: "")
             }
         }
-        print(String(format: " %02d", iy))
+        print(String(format: " %02d", iy * 10))
     }
     print("O:\(numBlack)枚 X:\(numWhite)枚")
     
@@ -55,23 +55,23 @@ func update() {
             print("ひきわけです")
         }
     }
-    else if (checkPass(color: BLACK) && turnBlack) {
+    else if (checkPass(color: BLACK) && (turn == BLACK)) {
         print("Oはパス")
-        turnBlack = false
+        turn = WHITE
     }
-    else if (checkPass(color: WHITE) && !turnBlack) {
+    else if (checkPass(color: WHITE) && (turn == WHITE)) {
         print("Xはパス")
-        turnBlack = true
+        turn = BLACK
     }
-    else if (turnBlack) {
+    else if (turn == BLACK) {
         print("Oのターン、Oを置いてください")
     }
-    else if (!turnBlack) {
+    else if (turn == WHITE) {
         print("Xのターン、Xを置いてください")
     }
 }
 
-func chekOne(y: Int, x: Int, dy: Int, dx: Int, color: Int) -> Int {
+func checkOne(y: Int, x: Int, dy: Int, dx: Int, color: Int) -> Int {
     var tmpy = y + dy
     var tmpx = x + dx
     var count = 0
@@ -84,27 +84,86 @@ func chekOne(y: Int, x: Int, dy: Int, dx: Int, color: Int) -> Int {
             return count
         }
         else {
-            
+            count += 1
         }
         tmpy += dy
         tmpx += dx
     }
-    return 0;
+    return 0
+}
+
+func flipOne(y: Int, x: Int, dy: Int, dx: Int, color: Int) -> Int {
+    if checkOne(y: y, x: x, dy: dy, dx: dx, color: color) == 0 {
+        return 0
+    }
+    
+    var tmpy = y + dy
+    var tmpx = x + dx
+    var count = 0
+    
+    while (tmpy >= 0 && tmpy < 8 && tmpx >= 0 && tmpx < 8) {
+        if (board[tmpy][tmpx] == 0) {
+            break
+        }
+        if (board[tmpy][tmpx] == color) {
+            return count
+        }
+        else {
+            board[tmpy][tmpx] = color
+            count += 1
+        }
+        tmpy += dy
+        tmpx += dx
+    }
+    return 0
 }
 
 func checkAll(y: Int, x: Int, color: Int) -> Int {
-    return 0;
+    if board[y][x] != 0 {
+        return 0
+    }
+    
+    var count = 0
+    count += checkOne(y: y, x: x, dy: -1, dx: -1, color: color)
+    count += checkOne(y: y, x: x, dy: -1, dx:  0, color: color)
+    count += checkOne(y: y, x: x, dy: -1, dx:  1, color: color)
+    count += checkOne(y: y, x: x, dy:  0, dx:  1, color: color)
+    count += checkOne(y: y, x: x, dy:  1, dx:  1, color: color)
+    count += checkOne(y: y, x: x, dy:  1, dx:  0, color: color)
+    count += checkOne(y: y, x: x, dy:  1, dx: -1, color: color)
+    count += checkOne(y: y, x: x, dy:  0, dx: -1, color: color)
+    return count;
+}
+
+func flipAll(y: Int, x: Int, color: Int) -> Int {
+    if board[y][x] != 0 {
+        return 0
+    }
+    
+    var count = 0
+    count += flipOne(y: y, x: x, dy: -1, dx: -1, color: color)
+    count += flipOne(y: y, x: x, dy: -1, dx:  0, color: color)
+    count += flipOne(y: y, x: x, dy: -1, dx:  1, color: color)
+    count += flipOne(y: y, x: x, dy:  0, dx:  1, color: color)
+    count += flipOne(y: y, x: x, dy:  1, dx:  1, color: color)
+    count += flipOne(y: y, x: x, dy:  1, dx:  0, color: color)
+    count += flipOne(y: y, x: x, dy:  1, dx: -1, color: color)
+    count += flipOne(y: y, x: x, dy:  0, dx: -1, color: color)
+    if count > 0 {
+        board[y][x] = color
+    }
+    return count;
 }
 
 func checkPass(color: Int) -> Bool {
     for iy in 0 ..< 8 {
         for ix in 0 ..< 8 {
             if (checkAll(y: iy, x: ix, color: color) > 0) {
-                return true
+                return false
             }
         }
     }
-    return false
+    return true
 }
 
 //プログラム実行開始の場所
@@ -117,4 +176,12 @@ while true {
         print("番号入力? ", terminator: "")
         num = Int(readLine()!)
     }
+    
+    if flipAll(y: num! / 10, x: num! % 10, color: turn) > 0 {
+        turn = turn == BLACK ? WHITE : BLACK
+    }
+    else {
+        print("***そこには置けません****")
+    }
 }
+
